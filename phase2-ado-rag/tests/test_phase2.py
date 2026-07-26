@@ -126,7 +126,7 @@ class TestRetrieverWithHyDE:
         retriever_hyde = Retriever(mock_vs, use_hyde=True)
         assert retriever_hyde._use_hyde is True
 
-    @patch("src.ragpoc.retrieval.retriever.get_llm_provider")
+    @patch("src.ragpoc.models.registry.get_llm_provider")
     def test_hyde_expansion_calls_llm(self, mock_get_llm):
         """When HyDE is enabled, retrieve should call generate_hyde_document."""
         from src.ragpoc.retrieval.retriever import Retriever
