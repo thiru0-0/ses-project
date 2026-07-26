@@ -1,0 +1,43 @@
+# Modern Agile Testing Practices for Distributed Systems
+
+## Introduction
+
+Testing distributed systems requires a fundamentally different approach than testing monolithic applications. The shift toward microservices architecture has introduced challenges in areas such as service isolation, network reliability, and data consistency that traditional testing frameworks were not designed to address.
+
+## The Testing Pyramid for Microservices
+
+The traditional testing pyramid (unit → integration → end-to-end) remains relevant but requires adaptation:
+
+### Unit Tests
+Unit tests should constitute approximately 70% of your test suite. For microservices, unit tests must mock all external dependencies including database calls, message queue interactions, and inter-service HTTP calls. Target execution time: under 5 minutes for the entire unit test suite.
+
+### Integration Tests
+Integration tests verify the contract between services. Consumer-Driven Contract Testing (using tools like Pact or Spring Cloud Contract) has become the standard approach. Each service publishes a contract, and consumer services verify compatibility. This approach catches breaking API changes before deployment.
+
+### End-to-End Tests
+End-to-end tests should be limited to 5-10 critical user journeys. These tests are expensive to maintain and slow to execute. Run them in a dedicated staging environment that mirrors production at reduced scale.
+
+## Chaos Engineering
+
+Chaos engineering practices, pioneered by Netflix's Chaos Monkey, should be integrated into your testing strategy by the third quarter of adopting a microservices architecture. Key experiments include:
+
+- **Network partition simulation**: Verify that services gracefully degrade when upstream dependencies become unreachable.
+- **Latency injection**: Ensure timeout configurations are correct by artificially adding 500ms-2000ms delays.
+- **Resource exhaustion**: Test behavior when CPU, memory, or disk resources are constrained.
+
+## Performance Testing
+
+Load testing should simulate realistic traffic patterns, not just peak load. Use tools like k6 or Gatling to model:
+
+1. **Steady state**: Normal traffic patterns over 24 hours
+2. **Spike testing**: 5x normal traffic for 15 minutes
+3. **Soak testing**: Sustained high load for 72 hours to detect memory leaks
+4. **Breakpoint testing**: Gradually increase load until the system fails to identify capacity limits
+
+## Observability-Driven Testing
+
+Modern testing increasingly relies on observability rather than assertions. Instead of asserting specific values, monitor system behavior through distributed tracing (using OpenTelemetry), structured logging, and metrics dashboards. This approach catches unexpected behavior that traditional assertions might miss.
+
+## Conclusion
+
+The key principle for testing distributed systems is: design for failure. Every test should assume that any component can fail at any time, and the system's behavior under failure should be predictable, documented, and validated.

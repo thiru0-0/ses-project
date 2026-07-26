@@ -1,0 +1,263 @@
+{
+  "run_timestamp": "2026-07-20T14:59:18.139363+00:00",
+  "total_questions": 25,
+  "metrics": {
+    "faithfulness": 0.07305329941195167,
+    "answer_relevancy": 0.07305329941195167,
+    "context_precision": 0.07305329941195167,
+    "context_recall": 0.07305329941195167,
+    "note": "basic_metrics_fallback"
+  },
+  "details": [
+    {
+      "question": "What is the maximum memory allocation for the data processing module?",
+      "ground_truth": "The maximum memory allocation for the data processing module is 4GB per processing node, as specified in REQ-DP-003.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6011402113856278,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "How long should user sessions last before expiring?",
+      "ground_truth": "User sessions shall expire after 30 minutes of inactivity, with a maximum of 3 concurrent sessions per user, as specified in REQ-AUTH-001.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.559693891120742,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What is the target system availability?",
+      "ground_truth": "The target availability is 99.95% measured on a rolling 30-day window, as specified in REQ-NF-001.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6063718018697297,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What is the Recovery Time Objective for disaster recovery?",
+      "ground_truth": "The Recovery Time Objective (RTO) is 4 hours, with a Recovery Point Objective (RPO) of 1 hour and backup frequency of every 6 hours, as specified in REQ-NF-003.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5495215610364896,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What is the default API rate limit per API key?",
+      "ground_truth": "The default rate limit is 1,000 requests per minute per API key, with a premium tier at 10,000 requests per minute, as specified in REQ-API-001.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6101602996868126,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What is the minimum password length required?",
+      "ground_truth": "The minimum password length is 12 characters, and must include uppercase, lowercase, numbers, and special characters, with rotation required every 90 days, as specified in REQ-AUTH-003.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5348996192151877,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What is the maximum refresh interval for real-time dashboards?",
+      "ground_truth": "The maximum refresh interval for real-time dashboards is 5 seconds, with dashboard data reflecting events processed within the last 10 seconds, as specified in REQ-AN-001.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5677731255656443,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "How many rows can be exported at once from the analytics system?",
+      "ground_truth": "The maximum export size is 10 million rows per export operation, with support for CSV, JSON, Parquet, and PDF formats, as specified in REQ-AN-003.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5963774327473023,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What is the maximum dataset size for ML model training?",
+      "ground_truth": "The ML pipeline supports training models on datasets up to 100GB, with training jobs scheduled during off-peak hours (2:00 AM - 6:00 AM UTC), as specified in REQ-ML-001.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6099215059921415,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "How many model versions are retained for rollback?",
+      "ground_truth": "The system retains the last 10 versions of each model and allows instant rollback to any retained version, using semantic versioning, as specified in REQ-ML-003.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6141383402638219,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "requirements"
+    },
+    {
+      "question": "What encryption algorithm is used for data at rest?",
+      "ground_truth": "All data at rest is encrypted using AES-256-GCM, with encryption keys managed through AWS KMS with automatic rotation every 365 days, as specified in REQ-SEC-001.",
+      "answer": "I couldn't find this information in the provided sources. [Source: Rag Poc Project Documentation]",
+      "declined": false,
+      "confidence": 0.6348986631519695,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "security"
+    },
+    {
+      "question": "How often are Data Encryption Keys rotated?",
+      "ground_truth": "Data Encryption Keys (DEKs) are rotated every 30 days, while the master key is rotated annually, as specified in REQ-SEC-003.",
+      "answer": "I couldn't find this information in the provided sources. [Source: Rag Poc Project Documentation]",
+      "declined": false,
+      "confidence": 0.5981520511392763,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "security"
+    },
+    {
+      "question": "How long are audit logs retained?",
+      "ground_truth": "Audit logs are retained for 2 years and must be immutable, logging user_id, timestamp, resource_accessed, action_performed, source_ip, and result, as specified in REQ-AC-002.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5577970231893556,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "security"
+    },
+    {
+      "question": "What is the timeframe for fulfilling GDPR Data Subject Access Requests?",
+      "ground_truth": "Data Subject Access Requests (DSARs) shall be fulfilled within 72 hours, and the system shall support the right to erasure with complete data deletion within 30 days, as specified in REQ-COMP-002.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5973495461803917,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "compliance"
+    },
+    {
+      "question": "What is the minimum number of compute nodes for the production cluster?",
+      "ground_truth": "The production cluster minimum is 12 compute nodes, each with 32 vCPUs, 128GB RAM, and 500GB NVMe SSD, with auto-scaling when CPU exceeds 70% for 5 minutes, as specified in REQ-INFRA-001.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6214464532062169,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "infrastructure"
+    },
+    {
+      "question": "What is the target cache hit rate for Redis?",
+      "ground_truth": "The cache hit rate target is 95%, with a minimum 64GB Redis cluster, TTL of 30 minutes for session data and 5 minutes for query cache, as specified in REQ-DB-002.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5920035508580296,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "infrastructure"
+    },
+    {
+      "question": "How many Kafka brokers are required minimum?",
+      "ground_truth": "Minimum 6 Kafka brokers with 7-day message retention, 12 partitions per topic minimum, and replication factor of 3, as specified in REQ-DB-003.",
+      "answer": "I couldn't find this information in the provided sources. [Source: Rag Poc Project Documentation]",
+      "declined": false,
+      "confidence": 0.6075111818576598,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "infrastructure"
+    },
+    {
+      "question": "What is the maximum allowed CI/CD build time?",
+      "ground_truth": "Build pipeline execution time shall not exceed 15 minutes for a full build including unit tests, as specified in REQ-INFRA-003.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5884285639587626,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "infrastructure"
+    },
+    {
+      "question": "What was the team's velocity in the last sprint before Sprint 42?",
+      "ground_truth": "The team's velocity in the previous sprint was 34 story points, as mentioned by Sarah Chen in the Sprint 42 planning chat.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5119144005492215,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "chat"
+    },
+    {
+      "question": "What caused the P2 database incident on April 12th?",
+      "ground_truth": "The incident was caused by a long-running analytical query scanning the entire events table (2.3 billion rows) without using the TimescaleDB hypertable index, which caused PostgreSQL primary CPU utilization to reach 95%.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5485118942707579,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "chat"
+    },
+    {
+      "question": "How long did the P2 database incident last?",
+      "ground_truth": "The total incident duration was 18 minutes, which was within the 1-hour P2 resolution SLA.",
+      "answer": "I couldn't find this information in the provided sources. [Source: Rag Poc Project Documentation]",
+      "declined": false,
+      "confidence": 0.6308450715570404,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "chat"
+    },
+    {
+      "question": "When was the Kafka migration scheduled for?",
+      "ground_truth": "The Kafka migration was scheduled for May 12th at 2 AM UTC, during the maintenance window (2 AM - 6 AM UTC).",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5920750195518786,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "chat"
+    },
+    {
+      "question": "What percentage of a test suite should unit tests constitute?",
+      "ground_truth": "Unit tests should constitute approximately 70% of the test suite, and for microservices, they must mock all external dependencies with a target execution time under 5 minutes.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.6090062450506916,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "reference"
+    },
+    {
+      "question": "What are the four tiers of data classification?",
+      "ground_truth": "The four tiers are: Public (freely shared), Internal (internal use only), Confidential (limited access), and Restricted (highest sensitivity - PII, payment card data, trade secrets).",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.5642203639839737,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "reference"
+    },
+    {
+      "question": "What is the maximum GDPR fine?",
+      "ground_truth": "The maximum GDPR fine is €20 million or 4% of global turnover, whichever is higher.",
+      "answer": "I couldn't find this information in the provided sources.",
+      "declined": false,
+      "confidence": 0.531437407672351,
+      "retrieved_chunks": 5,
+      "relevant_chunks": 5,
+      "category": "reference"
+    }
+  ]
+}
