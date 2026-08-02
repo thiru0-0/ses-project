@@ -10,8 +10,9 @@ GET  /ingest/status    — returns collection stats
 import logging
 import tempfile
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from src.ragpoc.ingestion.loaders import load_pdf, load_docx, load_url, load_message
@@ -24,11 +25,13 @@ router = APIRouter()
 
 class URLRequest(BaseModel):
     url: str
+    session_id: Optional[str] = None
 
 
 class MessageRequest(BaseModel):
     text: str
     source_label: str = "pasted"
+    session_id: Optional[str] = None
 
 
 class IngestResponse(BaseModel):
@@ -37,6 +40,21 @@ class IngestResponse(BaseModel):
     source_type: str
     chunk_count: int
     message: str
+
+
+def _ingest_document(raw_doc, session_id: Optional[str] = None):
+    """Common ingestion flow: normalize → chunk → add to vector store."""
+    store = _get_vector_store()
+    normalized = normalize(raw_doc)
+    chunks = chunk_document(normalized)
+    store.add_chunks(chunks, session_id=session_id)
+    return IngestResponse(
+        doc_id=normalized.doc_id,
+        title=normalized.title,
+        source_type=normalized.source_type,
+        chunk_count=len(chunks),
+        message=f"Successfully ingested '{normalized.title}' ({len(chunks)} chunks)",
+    )
 
 
 def _get_vector_store():
@@ -48,23 +66,8 @@ def _get_vector_store():
     return vector_store
 
 
-def _ingest_document(raw_doc):
-    """Common ingestion flow: normalize → chunk → add to vector store."""
-    store = _get_vector_store()
-    normalized = normalize(raw_doc)
-    chunks = chunk_document(normalized)
-    store.add_chunks(chunks)
-    return IngestResponse(
-        doc_id=normalized.doc_id,
-        title=normalized.title,
-        source_type=normalized.source_type,
-        chunk_count=len(chunks),
-        message=f"Successfully ingested '{normalized.title}' ({len(chunks)} chunks)",
-    )
-
-
 @router.post("/file", response_model=IngestResponse)
-async def ingest_file(file: UploadFile = File(...)):
+async def ingest_file(file: UploadFile = File(...), session_id: Optional[str] = Form(None)):
     """Upload a PDF or DOCX file for ingestion.
 
     The file is processed through: load → normalize → chunk → index.
@@ -79,7 +82,7 @@ async def ingest_file(file: UploadFile = File(...)):
             detail=f"Unsupported file type: {suffix}. Use .pdf or .docx",
         )
 
-    logger.info("Ingesting file: %s", file.filename)
+    logger.info("Ingesting file: %s (session_id=%s)", file.filename, session_id)
 
     try:
         # Save uploaded file to temp location
@@ -100,7 +103,7 @@ async def ingest_file(file: UploadFile = File(...)):
         raw_doc.source_ref = file.filename
         raw_doc.metadata["filename"] = file.filename
 
-        return _ingest_document(raw_doc)
+        return _ingest_document(raw_doc, session_id=session_id)
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -121,11 +124,11 @@ async def ingest_url(request: URLRequest):
 
     Uses Trafilatura for boilerplate removal — raw HTML is never chunked.
     """
-    logger.info("Ingesting URL: %s", request.url)
+    logger.info("Ingesting URL: %s (session_id=%s)", request.url, request.session_id)
 
     try:
         raw_doc = load_url(request.url)
-        return _ingest_document(raw_doc)
+        return _ingest_document(raw_doc, session_id=request.session_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -136,11 +139,11 @@ async def ingest_url(request: URLRequest):
 @router.post("/message", response_model=IngestResponse)
 async def ingest_message(request: MessageRequest):
     """Ingest a pasted message or chat thread."""
-    logger.info("Ingesting pasted message (%d chars)", len(request.text))
+    logger.info("Ingesting pasted message (%d chars) (session_id=%s)", len(request.text), request.session_id)
 
     try:
         raw_doc = load_message(request.text, source_label=request.source_label)
-        return _ingest_document(raw_doc)
+        return _ingest_document(raw_doc, session_id=request.session_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -149,7 +152,7 @@ async def ingest_message(request: MessageRequest):
 
 
 @router.get("/status")
-async def ingest_status():
+async def ingest_status(session_id: Optional[str] = None):
     """Return current ingestion/collection statistics."""
     store = _get_vector_store()
-    return store.get_stats()
+    return store.get_stats(session_id)

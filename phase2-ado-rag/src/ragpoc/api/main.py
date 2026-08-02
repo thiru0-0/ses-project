@@ -73,10 +73,12 @@ app.add_middleware(
 from src.ragpoc.api.routes_ingest import router as ingest_router
 from src.ragpoc.api.routes_query import router as query_router
 from src.ragpoc.api.routes_evaluate import router as evaluate_router
+from src.ragpoc.api.routes_session import router as session_router
 
 app.include_router(ingest_router, prefix="/ingest", tags=["Ingestion"])
 app.include_router(query_router, tags=["Query"])
 app.include_router(evaluate_router, prefix="/evaluate", tags=["Evaluation"])
+app.include_router(session_router, prefix="/session", tags=["Session"])
 
 
 @app.get("/health")

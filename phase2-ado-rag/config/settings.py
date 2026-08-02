@@ -18,9 +18,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # --- Ollama (must be running locally) ---
+    # --- LLM Provider Selection ---
+    llm_provider: str = "groq"  # "groq" or "ollama"
+
+    # --- Ollama (used when llm_provider=ollama) ---
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "qwen2.5:14b"
+
+    # --- Groq (used when llm_provider=groq) ---
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # --- Embeddings (local) ---
     embedding_model: str = "BAAI/bge-small-en-v1.5"

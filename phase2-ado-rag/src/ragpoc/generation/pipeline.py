@@ -12,6 +12,8 @@ Phase 2 additions:
 Simple, auditable. No self-critique loops, no multi-hop reasoning.
 """
 
+from typing import Optional
+
 import logging
 from dataclasses import dataclass, field
 
@@ -71,7 +73,7 @@ class RAGPipeline:
         logger.info("RAGPipeline initialized")
 
     def query(
-        self, question: str, mode: str | None = None
+        self, question: str, mode: str | None = None, session_id: Optional[str] = None
     ) -> QueryResponse:
         """Process a user question through the full RAG pipeline.
 
@@ -86,14 +88,15 @@ class RAGPipeline:
             mode: Output mode — "qa" for free text, "test_case" for
                   structured test cases. If None, auto-detects from
                   retrieved chunk source types.
+            session_id: Optional session ID to filter retrieval.
 
         Returns:
             QueryResponse with answer, sources, and confidence.
         """
-        logger.info("Pipeline processing query: '%s'", question[:100])
+        logger.info("Pipeline processing query: '%s' (session_id=%s)", question[:100], session_id)
 
         # Step 1: Retrieve (HyDE expansion happens inside the Retriever)
-        retrieved = self._retriever.retrieve(question)
+        retrieved = self._retriever.retrieve(question, session_id=session_id)
 
         # Step 2: Grade
         grading = self._grader.grade(question, retrieved)

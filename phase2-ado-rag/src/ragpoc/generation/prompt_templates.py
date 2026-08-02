@@ -31,7 +31,10 @@ SYSTEM_PROMPT_TEST_CASE = (
     "2. If the context does not contain enough information to write a meaningful "
     "test case, reply: \"Insufficient context to generate a test case.\"\n"
     "3. Always cite the source work item or document using [Source: <title>].\n"
-    "4. Do not use prior knowledge."
+    "4. Do not use prior knowledge.\n"
+    "5. Generate a unique Test ID for each test case (e.g., TC_LOGIN_01).\n"
+    "6. Include Requirement Reference from the context if available.\n"
+    "7. Format output as JSON array of test cases."
 )
 
 # --- QA Prompt Templates ---
@@ -48,7 +51,7 @@ QA_PROMPT_TEMPLATE = (
     "Cite sources using [Source: <title>]."
 )
 
-# Test-case-shaped output (Phase 2)
+# Test-case-shaped output (Phase 2) - Detailed format
 TEST_CASE_PROMPT_TEMPLATE = (
     "CONTEXT:\n"
     "---\n"
@@ -58,16 +61,30 @@ TEST_CASE_PROMPT_TEMPLATE = (
     "USER STORY / REQUIREMENT:\n"
     "{question}\n"
     "\n"
-    "Generate one or more test cases that verify the above requirement. "
-    "Use ONLY the context for facts. Format each test case as:\n\n"
-    "**Test Case: <title>**\n"
-    "- **Preconditions:** <list preconditions or 'None'>\n"
-    "- **Steps:**\n"
-    "  1. <step>\n"
-    "  2. <step>\n"
-    "  ...\n"
-    "- **Expected Result:** <what should happen>\n\n"
-    "Cite sources using [Source: <title>]."
+    "Generate one or more detailed test cases that verify the above requirement. "
+    "Use ONLY the context for facts. Each test case should clearly specify:\n"
+    "  Test Case: <unique test id> - <title>\n"
+    "  Preconditions: <what must be true before testing>\n"
+    "  Steps: <the numbered steps to perform>\n"
+    "  Expected Result: <the expected outcome>\n\n"
+    "Format each test case as a JSON object with the following fields:\n\n"
+    "{{\n"
+    '  "test_id": "TC_LOGIN_01",\n'
+    '  "requirement_reference": "REQ-001",\n'
+    '  "title": "Verify successful login with correct credentials",\n'
+    '  "description": "A short sentence explaining what is being tested",\n'
+    '  "preconditions": ["User has an active account", "User is on the login screen"],\n'
+    '  "test_steps": [\n'
+    '    "Enter user@test.com in the email field",\n'
+    '    "Enter Password123 in the password field",\n'
+    '    "Click the \\"Sign In\\" button"\n'
+    '  ],\n'
+    '  "expected_result": "The system logs the user in and opens the home dashboard",\n'
+    '  "actual_result": "",\n'
+    '  "status": "Not Run"\n'
+    "}}\n\n"
+    "Cite sources using [Source: <title>] within the description or steps if applicable.\n"
+    "Return a JSON array of test cases. If multiple test cases, increment the Test ID (e.g., TC_LOGIN_01, TC_LOGIN_02)."
 )
 
 # --- Decline Response ---
