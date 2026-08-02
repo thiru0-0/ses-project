@@ -62,8 +62,13 @@ TEST_CASE_PROMPT_TEMPLATE = (
     "{question}\n"
     "\n"
     "Generate one or more detailed test cases that verify the above requirement. "
-    "Use ONLY the context for facts. Format each test case as a JSON object with the following fields:\n\n"
-    "{\n"
+    "Use ONLY the context for facts. Each test case should clearly specify:\n"
+    "  Test Case: <unique test id> - <title>\n"
+    "  Preconditions: <what must be true before testing>\n"
+    "  Steps: <the numbered steps to perform>\n"
+    "  Expected Result: <the expected outcome>\n\n"
+    "Format each test case as a JSON object with the following fields:\n\n"
+    "{{\n"
     '  "test_id": "TC_LOGIN_01",\n'
     '  "requirement_reference": "REQ-001",\n'
     '  "title": "Verify successful login with correct credentials",\n'
@@ -72,12 +77,12 @@ TEST_CASE_PROMPT_TEMPLATE = (
     '  "test_steps": [\n'
     '    "Enter user@test.com in the email field",\n'
     '    "Enter Password123 in the password field",\n'
-    '    "Click the \"Sign In\" button"\n'
+    '    "Click the \\"Sign In\\" button"\n'
     '  ],\n'
     '  "expected_result": "The system logs the user in and opens the home dashboard",\n'
     '  "actual_result": "",\n'
     '  "status": "Not Run"\n'
-    "}\n\n"
+    "}}\n\n"
     "Cite sources using [Source: <title>] within the description or steps if applicable.\n"
     "Return a JSON array of test cases. If multiple test cases, increment the Test ID (e.g., TC_LOGIN_01, TC_LOGIN_02)."
 )
