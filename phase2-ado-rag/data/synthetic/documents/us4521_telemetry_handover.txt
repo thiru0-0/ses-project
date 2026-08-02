@@ -1,0 +1,34 @@
+# Work Item: US-4521 - Telemetry Downlink Data Integrity
+## Work Item Type: User Story
+## ID: US-4521
+## Priority: High
+## Area Path: Satellite Ops / Ground Segment / Telemetry
+## Tags: telemetry, ground-station, handover, data-integrity
+
+## Title
+Validate telemetry downlink data integrity during ground station handover
+
+## Description
+As a satellite operations engineer, I need the system to validate telemetry downlink data for completeness and integrity when the satellite transitions between ground stations, so that no telemetry packets are lost or corrupted during handover events, and mission-critical health data remains continuously available to the operations team.
+
+## Acceptance Criteria (AC)
+
+### AC-1: Packet sequence gap detection
+The system shall detect and flag any gaps in telemetry packet sequence numbers occurring during a ground station handover window.
+
+### AC-2: Checksum verification near handover
+The system shall verify checksum integrity for all telemetry frames received within +/-30 seconds of a handover event.
+
+### AC-3: Automated re-request on data gap
+If a data gap exceeding 5 seconds is detected, the system shall trigger an automated re-request for the missing telemetry segment from the prior ground station's buffer, where available.
+
+### AC-4: Handover event logging
+The system shall log all handover events with timestamp, originating station, receiving station, and packet continuity status.
+
+### AC-5: Priority alert on integrity failure
+If telemetry integrity cannot be confirmed within 60 seconds of handover completion, the system shall raise a priority alert to the operations dashboard.
+
+## Technical Notes
+- Handover window: the period spanning the link switch between the originating and receiving ground station.
+- Telemetry frames: downlink data packets sent from the satellite to Earth.
+- Re-request source: the prior ground station's on-ground buffer.
