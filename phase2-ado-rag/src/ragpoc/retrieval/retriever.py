@@ -14,6 +14,7 @@ reranking later without touching the pipeline.
 import logging
 import time
 from dataclasses import dataclass
+from typing import Optional
 
 from src.ragpoc.retrieval.vector_store import VectorStore
 from config.settings import settings
@@ -57,7 +58,7 @@ class Retriever:
             logger.info("Retriever initialized (direct embedding, no HyDE)")
 
     def retrieve(
-        self, query: str, top_k: int | None = None
+        self, query: str, top_k: int | None = None, session_id: Optional[str] = None
     ) -> list[RetrievedChunk]:
         """Retrieve the top-k most relevant chunks for a query.
 
@@ -67,6 +68,7 @@ class Retriever:
         Args:
             query: The user's question.
             top_k: Number of chunks to retrieve (defaults to settings.top_k).
+            session_id: Optional session ID to filter results.
 
         Returns:
             List of RetrievedChunk objects, ranked by relevance.
@@ -79,13 +81,14 @@ class Retriever:
             retrieval_text = self._expand_with_hyde(query)
 
         logger.info(
-            "Retrieving top-%d chunks for %squery: '%s'",
+            "Retrieving top-%d chunks for %squery: '%s' (session_id=%s)",
             k,
             "HyDE-expanded " if self._use_hyde else "",
             retrieval_text[:120],
+            session_id,
         )
 
-        results = self._vector_store.query_raw(retrieval_text, top_k=k)
+        results = self._vector_store.query_raw(retrieval_text, top_k=k, session_id=session_id)
 
         chunks = []
         if results and results.get("ids") and results["ids"][0]:

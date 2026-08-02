@@ -6,6 +6,7 @@ GET  /query/health — quick health check for query pipeline
 """
 
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -16,6 +17,8 @@ router = APIRouter()
 
 class QueryRequest(BaseModel):
     question: str
+    mode: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 class SourceCitationResponse(BaseModel):
@@ -52,11 +55,15 @@ async def query(request: QueryRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    logger.info("Query: '%s'", request.question[:100])
+    logger.info("Query: '%s' (mode=%s, session_id=%s)", request.question[:100], request.mode, request.session_id)
 
     try:
         pipeline = _get_pipeline()
-        result = pipeline.query(request.question)
+        result = pipeline.query(
+            request.question,
+            mode=request.mode,
+            session_id=request.session_id,
+        )
 
         return QueryResponseModel(
             answer=result.answer,

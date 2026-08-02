@@ -1,12 +1,11 @@
 """
-Streamlit demo UI — single app covering three jobs:
-1. 📄 Ingest — upload files, paste URLs, paste messages
-2. 💬 Ask — chat-style Q&A with source citations
-3. 📊 Evaluate — display Ragas evaluation metrics
+Streamlit demo UI — Chat-style interface with session management.
 
-Communicates with the FastAPI backend via HTTP requests.
+Single input box for all interactions (ingest + query) like ChatGPT/Claude.
+Sidebar for session management.
 """
 
+import json
 import requests
 import streamlit as st
 
@@ -15,371 +14,340 @@ import streamlit as st
 API_BASE_URL = "http://localhost:8000"
 
 st.set_page_config(
-    page_title="RAG POC",
-    page_icon="🔍",
+    page_title="RAG Test Case Generator",
+    page_icon="🧪",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
+
+# --- Helper Functions ---
+def api_request(method: str, endpoint: str, **kwargs):
+    """Make an API request with error handling."""
+    try:
+        resp = requests.request(method, f"{API_BASE_URL}{endpoint}", timeout=120, **kwargs)
+        if resp.status_code >= 400:
+            return None, resp.json().get("detail", resp.text)
+        return resp.json(), None
+    except requests.exceptions.ConnectionError:
+        return None, "Cannot connect to API server"
+    except requests.exceptions.Timeout:
+        return None, "Request timed out"
+    except Exception as e:
+        return None, str(e)
+
+
+def create_session(name: str, description: str = ""):
+    data, err = api_request("POST", "/session", json={"name": name, "description": description})
+    return data, err
+
+
+def list_sessions():
+    data, err = api_request("GET", "/session")
+    return data or [], err
+
+
+def delete_session(session_id: str):
+    data, err = api_request("DELETE", f"/session/{session_id}")
+    return data, err
+
+
+def get_session_stats(session_id: str):
+    data, err = api_request("GET", f"/session/{session_id}/stats")
+    return data, err
+
+
+def ingest_file(file, session_id: str):
+    files = {"file": (file.name, file.getvalue(), file.type)}
+    data = {"session_id": session_id} if session_id else {}
+    resp = requests.post(f"{API_BASE_URL}/ingest/file", files=files, data=data, timeout=120)
+    if resp.status_code == 200:
+        return resp.json(), None
+    return None, resp.json().get("detail", resp.text)
+
+
+def ingest_url(url: str, session_id: str):
+    data, err = api_request("POST", "/ingest/url", json={"url": url, "session_id": session_id})
+    return data, err
+
+
+def ingest_message(text: str, session_id: str, source_label: str = "pasted"):
+    data, err = api_request("POST", "/ingest/message", json={"text": text, "session_id": session_id, "source_label": source_label})
+    return data, err
+
+
+def query(question: str, session_id: str, mode: str | None = None):
+    data, err = api_request("POST", "/query", json={"question": question, "session_id": session_id, "mode": mode})
+    return data, err
+
+
+def check_api_health():
+    try:
+        resp = requests.get(f"{API_BASE_URL}/health", timeout=5)
+        if resp.status_code == 200:
+            return resp.json(), None
+        return None, f"Health check failed: {resp.status_code}"
+    except Exception as e:
+        return None, str(e)
+
+
+# --- Session State Initialization ---
+if "sessions" not in st.session_state:
+    st.session_state.sessions = []
+if "current_session_id" not in st.session_state:
+    st.session_state.current_session_id = None
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "pending_ingest" not in st.session_state:
+    st.session_state.pending_ingest = None
+
+
 # --- Sidebar ---
 with st.sidebar:
-    st.title("🔍 RAG POC")
-    st.caption("Retrieval-Augmented Generation")
+    st.title("🧪 RAG Test Case Generator")
+    st.caption("Multi-session RAG with test case generation")
     st.divider()
 
     # Health check
-    try:
-        health = requests.get(f"{API_BASE_URL}/health", timeout=5).json()
+    health, health_err = check_api_health()
+    if health:
         llm_ok = health.get("providers", {}).get("llm_available", False)
         total_chunks = health.get("vector_store", {}).get("total_chunks", 0)
-
-        st.metric("Indexed Chunks", total_chunks)
+        st.metric("Total Indexed Chunks", total_chunks)
         if llm_ok:
             st.success("✅ LLM Connected")
         else:
             st.error("❌ LLM Unavailable")
-    except requests.exceptions.ConnectionError:
-        st.error("❌ API Server Offline")
+    else:
+        st.error(f"❌ API Server Offline: {health_err}")
         st.caption("Start with: `uvicorn src.ragpoc.api.main:app --port 8000`")
 
     st.divider()
-    st.caption("Built with Ollama · LlamaIndex · ChromaDB")
 
+    # Session Management
+    st.subheader("📂 Sessions")
 
-# --- Tabs ---
-tab_ingest, tab_ask, tab_evaluate = st.tabs(["📄 Ingest", "💬 Ask", "📊 Evaluate"])
+    # Refresh sessions
+    if st.button("🔄 Refresh Sessions", use_container_width=True):
+        sessions, err = list_sessions()
+        if err:
+            st.error(f"Failed to load sessions: {err}")
+        else:
+            st.session_state.sessions = sessions
 
+    # Load sessions on first run
+    if not st.session_state.sessions:
+        sessions, err = list_sessions()
+        if not err:
+            st.session_state.sessions = sessions
 
-# ═══════════════════════════════════════════════
-# TAB 1: INGEST
-# ═══════════════════════════════════════════════
-with tab_ingest:
-    st.header("📄 Ingest Documents")
-    st.caption("Upload files, share links, or paste messages into the workspace.")
+    # Create new session
+    with st.expander("➕ Create New Session", expanded=not st.session_state.sessions):
+        new_session_name = st.text_input("Session Name", placeholder="e.g., Login Feature Testing")
+        new_session_desc = st.text_area("Description (optional)", placeholder="What are you testing?")
+        if st.button("Create Session", use_container_width=True, type="primary"):
+            if new_session_name.strip():
+                session, err = create_session(new_session_name.strip(), new_session_desc.strip())
+                if err:
+                    st.error(f"Failed to create session: {err}")
+                else:
+                    st.success(f"Created session: {session['name']}")
+                    st.session_state.current_session_id = session["session_id"]
+                    st.session_state.messages = []
+                    st.rerun()
+            else:
+                st.warning("Please enter a session name")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        # --- File Upload ---
-        st.subheader("Upload File")
-        uploaded_file = st.file_uploader(
-            "Choose a PDF or DOCX file",
-            type=["pdf", "docx"],
-            key="file_uploader",
-        )
-        if uploaded_file and st.button("📤 Upload & Index", key="btn_upload"):
-            with st.spinner("Processing file..."):
-                try:
-                    files = {
-                        "file": (
-                            uploaded_file.name,
-                            uploaded_file.getvalue(),
-                            uploaded_file.type,
-                        )
-                    }
-                    resp = requests.post(
-                        f"{API_BASE_URL}/ingest/file",
-                        files=files,
-                        timeout=120,
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        st.success(data["message"])
-                        st.json(data)
+    # Session list
+    if st.session_state.sessions:
+        st.caption("Click a session to switch")
+        for session in st.session_state.sessions:
+            is_active = session["session_id"] == st.session_state.current_session_id
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                label = f"{'🟢 ' if is_active else '⚪ '}{session['name']}"
+                if session.get("description"):
+                    label += f" — {session['description'][:30]}..."
+                if st.button(label, key=f"session_{session['session_id']}", use_container_width=True):
+                    st.session_state.current_session_id = session["session_id"]
+                    st.session_state.messages = []
+                    st.rerun()
+            with col2:
+                if st.button("🗑️", key=f"del_{session['session_id']}", help="Delete session"):
+                    _, err = delete_session(session["session_id"])
+                    if err:
+                        st.error(f"Failed to delete: {err}")
                     else:
-                        st.error(f"Error: {resp.json().get('detail', resp.text)}")
-                except requests.exceptions.ConnectionError:
-                    st.error("Cannot connect to API server")
+                        if st.session_state.current_session_id == session["session_id"]:
+                            st.session_state.current_session_id = None
+                            st.session_state.messages = []
+                        st.rerun()
 
-        st.divider()
-
-        # --- URL Scrape ---
-        st.subheader("Scrape URL")
-        url_input = st.text_input(
-            "Enter a URL to scrape",
-            placeholder="https://example.com/article",
-            key="url_input",
-        )
-        if url_input and st.button("🌐 Scrape & Index", key="btn_url"):
-            with st.spinner("Fetching and extracting content..."):
-                try:
-                    resp = requests.post(
-                        f"{API_BASE_URL}/ingest/url",
-                        json={"url": url_input},
-                        timeout=120,
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        st.success(data["message"])
-                        st.json(data)
-                    else:
-                        st.error(f"Error: {resp.json().get('detail', resp.text)}")
-                except requests.exceptions.ConnectionError:
-                    st.error("Cannot connect to API server")
-
-    with col2:
-        # --- Paste Message ---
-        st.subheader("Paste Message / Chat Thread")
-        message_input = st.text_area(
-            "Paste text content here",
-            height=300,
-            placeholder="Paste a Slack/Teams message, chat thread, or any text...",
-            key="message_input",
-        )
-        if message_input and st.button("📋 Index Pasted Text", key="btn_message"):
-            with st.spinner("Indexing message..."):
-                try:
-                    resp = requests.post(
-                        f"{API_BASE_URL}/ingest/message",
-                        json={"text": message_input},
-                        timeout=120,
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        st.success(data["message"])
-                        st.json(data)
-                    else:
-                        st.error(f"Error: {resp.json().get('detail', resp.text)}")
-                except requests.exceptions.ConnectionError:
-                    st.error("Cannot connect to API server")
-
-    # --- Collection Stats ---
     st.divider()
-    if st.button("🔄 Refresh Stats", key="btn_stats"):
-        try:
-            resp = requests.get(f"{API_BASE_URL}/ingest/status", timeout=10)
-            if resp.status_code == 200:
-                st.json(resp.json())
-        except requests.exceptions.ConnectionError:
-            st.error("Cannot connect to API server")
+
+    # Current session stats
+    if st.session_state.current_session_id:
+        stats, _ = get_session_stats(st.session_state.current_session_id)
+        if stats:
+            st.metric("Session Chunks", stats.get("total_chunks", 0))
+
+    st.divider()
+    st.caption("Built with Ollama · LlamaIndex · ChromaDB · Streamlit")
 
 
-# ═══════════════════════════════════════════════
-# TAB 2: ASK
-# ═══════════════════════════════════════════════
-with tab_ask:
-    st.header("💬 Ask a Question")
-    st.caption("Ask questions about your indexed documents. Answers are grounded in the uploaded content only.")
+# --- Main Chat Interface ---
+st.header("💬 Chat")
 
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+# Show current session
+if st.session_state.current_session_id:
+    session_name = next(
+        (s["name"] for s in st.session_state.sessions if s["session_id"] == st.session_state.current_session_id),
+        "Unknown"
+    )
+    st.caption(f"Session: **{session_name}** (`{st.session_state.current_session_id[:8]}...`)")
+else:
+    st.warning("⚠️ No session selected. Create or select a session from the sidebar.")
 
-    # Display chat history
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
+# Display chat history
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        if msg["role"] == "assistant" and msg.get("is_test_case"):
+            # Render test case nicely
+            try:
+                test_cases = json.loads(msg["content"])
+                for tc in test_cases:
+                    with st.expander(f"📋 {tc.get('test_id', 'TC_001')}: {tc.get('title', 'Untitled')}", expanded=True):
+                        st.markdown(f"**Requirement Reference:** {tc.get('requirement_reference', 'N/A')}")
+                        st.markdown(f"**Description:** {tc.get('description', 'N/A')}")
+                        st.markdown("**Preconditions:**")
+                        for pc in tc.get("preconditions", []):
+                            st.markdown(f"- {pc}")
+                        st.markdown("**Test Steps:**")
+                        for i, step in enumerate(tc.get("test_steps", []), 1):
+                            st.markdown(f"{i}. {step}")
+                        st.markdown(f"**Expected Result:** {tc.get('expected_result', 'N/A')}")
+                        st.markdown(f"**Actual Result:** {tc.get('actual_result', '_(to be filled during execution)_')}")
+                        status = tc.get("status", "Not Run")
+                        status_color = {"Pass": "🟢", "Fail": "🔴", "Not Run": "⚪"}.get(status, "⚪")
+                        st.markdown(f"**Status:** {status_color} {status}")
+            except json.JSONDecodeError:
+                st.markdown(msg["content"])
+        else:
             st.markdown(msg["content"])
-            if msg.get("metadata"):
-                with st.expander("📊 Details"):
-                    st.json(msg["metadata"])
+        
+        if msg.get("metadata"):
+            with st.expander("📊 Details"):
+                st.json(msg["metadata"])
 
-    # Chat input
-    if prompt := st.chat_input("Ask a question about your documents..."):
-        # Display user message
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+# Chat input - single unified input
+if prompt := st.chat_input("Ask a question, paste a URL, upload a file, or say 'generate test case for...'", disabled=not st.session_state.current_session_id):
+    # Display user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        # Query the pipeline
-        with st.chat_message("assistant"):
-            with st.spinner("Searching and generating answer..."):
-                try:
-                    resp = requests.post(
-                        f"{API_BASE_URL}/query",
-                        json={"question": prompt},
-                        timeout=120,
-                    )
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        answer = data["answer"]
+    # Process the input
+    with st.chat_message("assistant"):
+        with st.spinner("Processing..."):
+            session_id = st.session_state.current_session_id
+            
+            # Check if it's a URL
+            if prompt.startswith(("http://", "https://")):
+                # Ingest URL
+                data, err = ingest_url(prompt, session_id)
+                if err:
+                    answer = f"❌ Failed to ingest URL: {err}"
+                else:
+                    answer = f"✅ Ingested URL: **{data['title']}** ({data['chunk_count']} chunks)"
+                
+                st.session_state.messages.append({"role": "assistant", "content": answer})
+                st.markdown(answer)
+            
+            # Check if it's a file upload request (we'll handle file upload separately)
+            # For now, treat as query
+            else:
+                # Determine mode - check if user wants test case generation
+                mode = None
+                if any(kw in prompt.lower() for kw in ["generate test case", "create test case", "test case for"]):
+                    mode = "test_case"
+                
+                data, err = query(prompt, session_id, mode)
+                if err:
+                    answer = f"❌ Error: {err}"
+                    st.error(answer)
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                else:
+                    answer = data["answer"]
+                    metadata = {
+                        "confidence": data["confidence"],
+                        "declined": data["declined"],
+                        "retrieved_chunks": data["retrieved_chunks"],
+                        "relevant_chunks": data["relevant_chunks"],
+                        "sources": data["sources"],
+                    }
+                    
+                    # Check if response is test case JSON
+                    is_test_case = False
+                    if mode == "test_case":
+                        try:
+                            json.loads(answer)
+                            is_test_case = True
+                        except json.JSONDecodeError:
+                            pass
+                    
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": answer,
+                        "metadata": metadata,
+                        "is_test_case": is_test_case,
+                    })
+                    
+                    if is_test_case:
+                        # Re-render to show formatted test cases
+                        st.rerun()
+                    else:
                         st.markdown(answer)
-
-                        # Show metadata
-                        metadata = {
-                            "confidence": data["confidence"],
-                            "declined": data["declined"],
-                            "retrieved_chunks": data["retrieved_chunks"],
-                            "relevant_chunks": data["relevant_chunks"],
-                            "sources": data["sources"],
-                        }
-
                         if data["sources"]:
                             st.caption("**Sources:**")
                             for src in data["sources"]:
                                 st.caption(f"  • {src['title']} ({src['source_ref']})")
 
-                        with st.expander("📊 Details"):
-                            st.json(metadata)
 
-                        st.session_state.messages.append(
-                            {
-                                "role": "assistant",
-                                "content": answer,
-                                "metadata": metadata,
-                            }
-                        )
-                    else:
-                        error_msg = f"Error: {resp.json().get('detail', resp.text)}"
-                        st.error(error_msg)
-                        st.session_state.messages.append(
-                            {"role": "assistant", "content": error_msg}
-                        )
-                except requests.exceptions.ConnectionError:
-                    st.error("Cannot connect to API server")
-
-
-# ═══════════════════════════════════════════════
-# TAB 3: EVALUATE
-# ═══════════════════════════════════════════════
-with tab_evaluate:
-    st.header("📊 Evaluation Dashboard")
-    st.caption("Run RAGAS evaluation against the golden Q&A set and inspect results.")
-
-    # --- Run Evaluation ---
-    st.subheader("Run Evaluation")
-    col_run, col_info = st.columns([1, 2])
-    with col_run:
-        run_eval = st.button(
-            "▶️ Run RAGAS Evaluation",
-            key="btn_run_eval",
-            type="primary",
-            help="Runs all golden Q&A pairs through the live pipeline and computes metrics.",
+# --- File Upload Area (below chat) ---
+if st.session_state.current_session_id:
+    st.divider()
+    st.subheader("📎 Quick Ingest")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        uploaded_file = st.file_uploader(
+            "Upload PDF/DOCX",
+            type=["pdf", "docx"],
+            key="file_uploader_main",
+            label_visibility="collapsed",
         )
-    with col_info:
-        st.caption(
-            "⚠️ This may take several minutes depending on the number of golden Q&A "
-            "pairs and LLM response time."
-        )
-
-    if run_eval:
-        with st.spinner("Running evaluation — this may take a few minutes..."):
-            try:
-                resp = requests.post(
-                    f"{API_BASE_URL}/evaluate/run",
-                    timeout=600,
-                )
-                if resp.status_code == 200:
-                    st.success("✅ Evaluation complete!")
-                    st.session_state["eval_latest"] = resp.json()
-                elif resp.status_code == 404:
-                    st.error(f"⚠️ {resp.json().get('detail', 'Golden Q&A set not found.')}")
+        if uploaded_file and st.button("📤 Ingest File", use_container_width=True):
+            with st.spinner("Processing file..."):
+                data, err = ingest_file(uploaded_file, st.session_state.current_session_id)
+                if err:
+                    st.error(f"Failed: {err}")
                 else:
-                    st.error(f"Evaluation failed: {resp.json().get('detail', resp.text)}")
-            except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to API server.")
-            except requests.exceptions.Timeout:
-                st.error("Evaluation timed out after 10 minutes.")
-
-    st.divider()
-
-    # --- Latest Results ---
-    st.subheader("Latest Results")
-
-    latest_data = st.session_state.get("eval_latest")
-    if latest_data is None:
-        try:
-            resp = requests.get(f"{API_BASE_URL}/evaluate/results/latest", timeout=10)
-            if resp.status_code == 200:
-                latest_data = resp.json()
-        except requests.exceptions.ConnectionError:
-            pass
-
-    if latest_data:
-        ts = latest_data.get("run_timestamp", "Unknown")
-        total_q = latest_data.get("total_questions", 0)
-        st.caption(f"🕐 Run at: `{ts}` — {total_q} questions evaluated")
-
-        metrics = latest_data.get("metrics", {})
-        if metrics:
-            metric_display = [
-                ("Faithfulness", metrics.get("faithfulness", 0)),
-                ("Answer Relevancy", metrics.get("answer_relevancy", 0)),
-                ("Context Precision", metrics.get("context_precision", 0)),
-                ("Context Recall", metrics.get("context_recall", 0)),
-            ]
-
-            cols = st.columns(4)
-            for col, (name, value) in zip(cols, metric_display):
-                col.metric(name, f"{value:.1%}")
-
-            st.write("")
-            for name, value in metric_display:
-                st.write(f"**{name}** — {value:.1%}")
-                st.progress(float(value))
-
-            if metrics.get("note") == "basic_metrics_fallback":
-                st.warning(
-                    "⚠️ RAGAS library scoring unavailable — "
-                    "basic word-overlap metrics shown instead."
-                )
-
-            import pandas as pd
-            df = pd.DataFrame(
-                {
-                    "Metric": [m[0] for m in metric_display],
-                    "Score": [m[1] for m in metric_display],
-                }
-            )
-            st.bar_chart(df.set_index("Metric"))
-
-        details = latest_data.get("details", [])
-        if details:
-            st.divider()
-            st.subheader("Per-Question Breakdown")
-            declined_count = sum(1 for d in details if d.get("declined"))
-            avg_conf = sum(d.get("confidence", 0) for d in details) / len(details)
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Total Questions", len(details))
-            c2.metric("Declined", declined_count)
-            c3.metric("Avg Confidence", f"{avg_conf:.2f}")
-
-            import pandas as pd
-            df_details = pd.DataFrame(
-                [
-                    {
-                        "Question": d.get("question", "")[:80],
-                        "Category": d.get("category", ""),
-                        "Confidence": f"{d.get('confidence', 0):.2f}",
-                        "Declined": "❌" if d.get("declined") else "✅",
-                        "Retrieved": d.get("retrieved_chunks", 0),
-                        "Relevant": d.get("relevant_chunks", 0),
-                        "Answer (preview)": d.get("answer", "")[:120],
-                    }
-                    for d in details
-                ]
-            )
-            st.dataframe(df_details, use_container_width=True)
-    else:
-        st.info(
-            "No evaluation results yet. "
-            "Click **▶️ Run RAGAS Evaluation** above to start."
+                    st.success(f"Ingested: {data['title']} ({data['chunk_count']} chunks)")
+                    st.rerun()
+    
+    with col2:
+        url_input = st.text_input(
+            "Or paste a URL",
+            placeholder="https://example.com/requirements",
+            key="url_input_main",
+            label_visibility="collapsed",
         )
-
-    # --- Historical Runs ---
-    st.divider()
-    st.subheader("Historical Runs")
-    try:
-        resp = requests.get(f"{API_BASE_URL}/evaluate/results", timeout=10)
-        if resp.status_code == 200:
-            history = resp.json()
-            runs = history.get("results", [])
-            if runs:
-                for run in runs:
-                    n = run.get("total_questions", "?")
-                    m = run.get("metrics", {})
-                    summary = "  |  ".join(
-                        f"{k.replace('_', ' ').title()}: {v:.1%}"
-                        for k, v in m.items()
-                        if isinstance(v, float)
-                    )
-                    with st.expander(f"📄 `{run['filename']}` — {n} questions"):
-                        st.caption(f"🕐 {run.get('run_timestamp', '')}")
-                        if summary:
-                            st.caption(summary)
-                        else:
-                            st.caption("No metrics available.")
-            else:
-                st.caption("No historical runs yet.")
-    except requests.exceptions.ConnectionError:
-        st.caption("Could not load history — API server not reachable.")
-
+        if url_input and st.button("🌐 Ingest URL", use_container_width=True):
+            with st.spinner("Fetching and indexing..."):
+                data, err = ingest_url(url_input, st.session_state.current_session_id)
+                if err:
+                    st.error(f"Failed: {err}")
+                else:
+                    st.success(f"Ingested: {data['title']} ({data['chunk_count']} chunks)")
+                    st.rerun()

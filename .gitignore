@@ -1,0 +1,25 @@
+# Environment secrets (contains real API keys — never commit)
+.env
+.env.*
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Vector database / runtime data
+storage/
+*.sqlite3
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual environment
+.venv/
+venv/
