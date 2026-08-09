@@ -37,7 +37,7 @@ class NormalizedDocument:
     metadata: dict = field(default_factory=dict)
 
 
-def normalize(raw_doc: RawDocument) -> NormalizedDocument:
+def normalize(raw_doc: RawDocument, session_id: str = "") -> NormalizedDocument:
     """Normalize a RawDocument into a NormalizedDocument.
 
     Applies the following normalizations:
@@ -76,6 +76,8 @@ def normalize(raw_doc: RawDocument) -> NormalizedDocument:
     metadata = {**raw_doc.metadata}
     metadata["original_char_count"] = len(raw_doc.content)
     metadata["normalized_char_count"] = len(content)
+    if session_id:
+        metadata["session_id"] = session_id
 
     return NormalizedDocument(
         doc_id=str(uuid.uuid4()),

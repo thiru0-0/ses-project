@@ -29,25 +29,19 @@ class GoldenQAPair:
 
 
 def load_golden_set(path: str | Path | None = None) -> list[GoldenQAPair]:
-    """Load and validate the golden Q&A set from JSONL.
+    """Load and validate the golden Q&A set from JSONL or JSON.
 
-    Each line in the JSONL file should be a JSON object with at least:
-    - question: str
-    - ground_truth: str
+    If .jsonl, each line should be a JSON object with at least:
+    - question: str (or user_story)
+    - ground_truth: str (or expected_test_case)
 
-    Optional fields:
-    - source_doc: str
-    - category: str
+    If .json, it should be an object with a "pairs" array containing the above.
 
     Args:
-        path: Path to the JSONL file. Defaults to settings.golden_qa_path.
+        path: Path to the JSONL or JSON file. Defaults to settings.golden_qa_path.
 
     Returns:
         List of validated GoldenQAPair objects.
-
-    Raises:
-        FileNotFoundError: If the JSONL file doesn't exist.
-        ValueError: If the file has validation errors.
     """
     filepath = Path(path or settings.golden_qa_path)
     if not filepath.exists():
@@ -58,42 +52,65 @@ def load_golden_set(path: str | Path | None = None) -> list[GoldenQAPair]:
     pairs = []
     errors = []
 
-    with open(filepath, "r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f, 1):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-
+    if filepath.suffix.lower() == ".json":
+        with open(filepath, "r", encoding="utf-8") as f:
             try:
-                data = json.loads(line)
+                data = json.load(f)
+                raw_pairs = data.get("pairs", [])
             except json.JSONDecodeError as e:
-                errors.append(f"Line {line_num}: Invalid JSON - {e}")
+                raise ValueError(f"Invalid JSON in {filepath}: {e}")
+                
+        for i, item in enumerate(raw_pairs, 1):
+            q = item.get("question") or item.get("user_story")
+            ans = item.get("ground_truth") or item.get("expected_test_case")
+            
+            if not q:
+                errors.append(f"Item {i}: Missing question/user_story")
                 continue
-
-            # Validate required fields
-            missing = REQUIRED_FIELDS - set(data.keys())
-            if missing:
-                errors.append(
-                    f"Line {line_num}: Missing required fields: {missing}"
-                )
+            if not ans:
+                errors.append(f"Item {i}: Missing ground_truth/expected_test_case")
                 continue
-
-            # Validate non-empty
-            if not data["question"].strip():
-                errors.append(f"Line {line_num}: Empty question")
-                continue
-            if not data["ground_truth"].strip():
-                errors.append(f"Line {line_num}: Empty ground_truth")
-                continue
-
+                
             pairs.append(
                 GoldenQAPair(
-                    question=data["question"].strip(),
-                    ground_truth=data["ground_truth"].strip(),
-                    source_doc=data.get("source_doc", "").strip(),
-                    category=data.get("category", "").strip(),
+                    question=q.strip(),
+                    ground_truth=ans.strip(),
+                    source_doc=item.get("source_doc", "").strip(),
+                    category=item.get("category", "").strip(),
                 )
             )
+    else:
+        # JSONL format
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError as e:
+                    errors.append(f"Line {line_num}: Invalid JSON - {e}")
+                    continue
+
+                q = data.get("question") or data.get("user_story")
+                ans = data.get("ground_truth") or data.get("expected_test_case")
+                
+                if not q:
+                    errors.append(f"Line {line_num}: Missing question/user_story")
+                    continue
+                if not ans:
+                    errors.append(f"Line {line_num}: Missing ground_truth/expected_test_case")
+                    continue
+
+                pairs.append(
+                    GoldenQAPair(
+                        question=q.strip(),
+                        ground_truth=ans.strip(),
+                        source_doc=data.get("source_doc", "").strip(),
+                        category=data.get("category", "").strip(),
+                    )
+                )
 
     if errors:
         error_msg = f"Golden set has {len(errors)} validation errors:\n"

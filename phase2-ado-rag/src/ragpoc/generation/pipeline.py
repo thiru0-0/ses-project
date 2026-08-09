@@ -6,13 +6,13 @@ Phase 1 flow:
 
 Phase 2 additions:
     - HyDE query expansion (handled by the Retriever)
-    - Test-case-shaped output mode for ADO user stories
+    - Test-case-shaped output mode for ADO user stories (8-field format)
     - Mode auto-detection or explicit selection
+    - Human-review flag when confidence is below threshold
+    - Session-scoped retrieval via metadata filtering
 
 Simple, auditable. No self-critique loops, no multi-hop reasoning.
 """
-
-from typing import Optional
 
 import logging
 from dataclasses import dataclass, field
@@ -24,11 +24,13 @@ from src.ragpoc.generation.prompt_templates import (
     SYSTEM_PROMPT,
     SYSTEM_PROMPT_TEST_CASE,
     DECLINE_RESPONSE,
+    LOW_CONFIDENCE_FLAG,
     format_qa_prompt,
     format_test_case_prompt,
     format_context_from_chunks,
 )
 from src.ragpoc.models.registry import get_llm_provider
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,7 @@ class QueryResponse:
     retrieved_chunks: int = 0  # how many chunks were retrieved
     relevant_chunks: int = 0  # how many passed the threshold
     mode: str = "qa"  # "qa" or "test_case"
+    needs_review: bool = False  # True when confidence < human_review_threshold
 
 
 class RAGPipeline:
@@ -60,10 +63,11 @@ class RAGPipeline:
 
     Supports two output modes:
     - ``"qa"`` — free-text answer with citations (Phase 1 default).
-    - ``"test_case"`` — structured test-case output (Phase 2).
+    - ``"test_case"`` — structured 8-field test-case output (Phase 2).
 
     Mode can be set explicitly or auto-detected from the source type
-    of the top retrieved chunk.
+    of the top retrieved chunk. Includes human-review flagging when
+    confidence falls below the configured threshold.
     """
 
     def __init__(self, vector_store: VectorStore):
@@ -73,7 +77,7 @@ class RAGPipeline:
         logger.info("RAGPipeline initialized")
 
     def query(
-        self, question: str, mode: str | None = None, session_id: Optional[str] = None
+        self, question: str, mode: str | None = None, session_id: str = ""
     ) -> QueryResponse:
         """Process a user question through the full RAG pipeline.
 
@@ -88,12 +92,12 @@ class RAGPipeline:
             mode: Output mode — "qa" for free text, "test_case" for
                   structured test cases. If None, auto-detects from
                   retrieved chunk source types.
-            session_id: Optional session ID to filter retrieval.
+            session_id: Optional session ID for scoped retrieval.
 
         Returns:
-            QueryResponse with answer, sources, and confidence.
+            QueryResponse with answer, sources, confidence, and review flag.
         """
-        logger.info("Pipeline processing query: '%s' (session_id=%s)", question[:100], session_id)
+        logger.info("Pipeline processing query: '%s'", question[:100])
 
         # Step 1: Retrieve (HyDE expansion happens inside the Retriever)
         retrieved = self._retriever.retrieve(question, session_id=session_id)
@@ -112,6 +116,7 @@ class RAGPipeline:
                 retrieved_chunks=grading.total_retrieved,
                 relevant_chunks=grading.total_relevant,
                 mode=mode or "qa",
+                needs_review=False,
             )
 
         # Auto-detect mode if not specified
@@ -138,6 +143,16 @@ class RAGPipeline:
         )
         answer = self._llm.generate(prompt, system_prompt=system_prompt)
 
+        # Human-review flag: if confidence is below threshold, flag it
+        needs_review = grading.confidence_score < settings.human_review_threshold
+        if needs_review:
+            logger.info(
+                "Confidence %.4f < threshold %.4f — flagging for human review",
+                grading.confidence_score,
+                settings.human_review_threshold,
+            )
+            answer += LOW_CONFIDENCE_FLAG
+
         # Build source citations
         sources = []
         seen = set()
@@ -154,9 +169,10 @@ class RAGPipeline:
                 )
 
         logger.info(
-            "Pipeline produced %s answer with %d source citations",
+            "Pipeline produced %s answer with %d source citations (review=%s)",
             mode,
             len(sources),
+            needs_review,
         )
         return QueryResponse(
             answer=answer,
@@ -166,6 +182,7 @@ class RAGPipeline:
             retrieved_chunks=grading.total_retrieved,
             relevant_chunks=len(grading.relevant_chunks),
             mode=mode,
+            needs_review=needs_review,
         )
 
     @staticmethod

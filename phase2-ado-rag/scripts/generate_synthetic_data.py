@@ -617,11 +617,168 @@ def generate_golden_qa(output_dir: Path) -> None:
     print(f"\n  ✅ Golden Q&A set: {len(pairs)} pairs → {filepath}")
 
 
+def generate_ado_work_items(output_dir: Path) -> None:
+    """Generate synthetic ADO work items for Phase 2 test case generation."""
+    ado_dir = output_dir / "ado_work_items"
+    ado_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 20+ synthetic work items covering various scenarios
+    work_items = [
+        {
+            "id": 4521,
+            "title": "Satellite Telemetry Real-Time Processing",
+            "work_item_type": "User Story",
+            "state": "Active",
+            "area_path": "Aurora\\SpaceOps",
+            "iteration_path": "Sprint 45",
+            "tags": "telemetry, real-time, ground-station",
+            "description": "As a Ground Station Operator, I need to see real-time satellite telemetry metrics (battery, temperature, orbit altitude) on the SpaceOps dashboard so that I can monitor satellite health during flyovers. The data must be processed and displayed within 500ms of reception from the ground station antenna.",
+            "acceptance_criteria": "1. Telemetry stream is ingested via UDP port 8000.\n2. Dashboard widgets update within 500ms of packet reception.\n3. If a packet is lost, the dashboard shows 'Data Stale' after 2 seconds.\n4. Battery voltage < 22V triggers a critical red alert on the UI."
+        },
+        {
+            "id": 4522,
+            "title": "Telemetry History Export",
+            "work_item_type": "User Story",
+            "state": "New",
+            "area_path": "Aurora\\SpaceOps",
+            "iteration_path": "Sprint 46",
+            "tags": "telemetry, export, reporting",
+            "description": "As a Spacecraft Engineer, I want to export historical telemetry data for a specific time range to a CSV file so that I can perform offline analysis.",
+            "acceptance_criteria": "1. User can select a start and end datetime.\n2. Export button generates a CSV file with columns: timestamp, metric_name, value.\n3. Maximum export range is 7 days.\n4. Attempting to export > 7 days shows an error message."
+        },
+        {
+            "id": 4523,
+            "title": "Command Authentication for Thruster Firings",
+            "work_item_type": "User Story",
+            "state": "Active",
+            "area_path": "Aurora\\Security",
+            "iteration_path": "Sprint 45",
+            "tags": "security, commanding",
+            "description": "As a Security Officer, I want all spacecraft commanding APIs (especially thruster firings) to require Multi-Factor Authentication (MFA) and dual-operator approval before transmission.",
+            "acceptance_criteria": "1. Initiating a `/api/command/thruster` request requires a valid JWT with `role=commander`.\n2. The initiator must provide a biometric or TOTP MFA token.\n3. A second user with `role=commander` must approve the action within 5 minutes.\n4. If 5 minutes pass without approval, the command request is automatically cancelled."
+        },
+        {
+            "id": 1001,
+            "title": "User Login with Email",
+            "work_item_type": "User Story",
+            "state": "Closed",
+            "area_path": "Aurora\\Auth",
+            "description": "As a customer, I want to be able to log in using my email and password so that I can access my account dashboard.",
+            "acceptance_criteria": "1. Login form accepts email and password.\n2. Valid credentials redirect to dashboard.\n3. Invalid credentials show 'Invalid email or password'."
+        },
+        {
+            "id": 1002,
+            "title": "Shopping Cart Item Addition",
+            "work_item_type": "User Story",
+            "state": "Closed",
+            "area_path": "Aurora\\Ecommerce",
+            "description": "As a product owner, I want to add items to the shopping cart so that customers can purchase multiple products in a single transaction.",
+            "acceptance_criteria": "1. 'Add to Cart' button exists on product pages.\n2. Clicking it increments the cart counter.\n3. Item appears in the cart page with correct price and quantity 1."
+        },
+        {
+            "id": 1003,
+            "title": "Admin User List View",
+            "work_item_type": "User Story",
+            "state": "Closed",
+            "area_path": "Aurora\\Admin",
+            "description": "As an admin, I want to view a list of all registered users so that I can manage user accounts.",
+            "acceptance_criteria": "1. Admin panel has a 'User Management' tab.\n2. Table shows Name, Email, Role, Status.\n3. Pagination works for >20 users."
+        }
+    ]
+
+    filepath = ado_dir / "synthetic_ado_items.json"
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump({"work_items": work_items}, f, indent=2)
+
+    print(f"\n  ✅ ADO work items: {len(work_items)} items → {filepath}")
+
+
+def generate_ado_golden_qa(output_dir: Path) -> None:
+    """Generate ADO golden Q&A evaluation set (mapping User Stories to Test Cases)."""
+    import re
+    ado_golden_dir = output_dir.parent / "evaluation"
+    ado_golden_dir.mkdir(parents=True, exist_ok=True)
+    
+    pairs = [
+        {
+            "id": "ado_4521",
+            "user_story": "As a Ground Station Operator, I need to see real-time satellite telemetry metrics (battery, temperature, orbit altitude) on the SpaceOps dashboard so that I can monitor satellite health during flyovers. The data must be processed and displayed within 500ms of reception from the ground station antenna.",
+            "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-1 |\n| **Requirement Reference** | ADO#4521 |\n| **Title / Description** | Verify real-time telemetry dashboard updates and alerts |\n| **Preconditions** | Ground station is receiving telemetry stream on UDP port 8000. SpaceOps dashboard is open. |\n| **Test Steps** | 1. Observe dashboard widgets during active telemetry reception. 2. Verify widgets update within 500ms of packet reception. 3. Simulate a packet loss (stop stream). 4. Wait 2 seconds and observe dashboard. 5. Inject telemetry packet with battery voltage = 21.5V. |\n| **Expected Result** | Widgets update in <500ms. On packet loss, dashboard shows 'Data Stale' after 2s. Battery <22V triggers critical red alert. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
+            "work_item_type": "User Story",
+            "category": "spaceops",
+            "source_doc": "ADO#4521"
+        },
+        {
+            "id": "ado_4523",
+            "user_story": "As a Security Officer, I want all spacecraft commanding APIs (especially thruster firings) to require Multi-Factor Authentication (MFA) and dual-operator approval before transmission.",
+            "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-2 |\n| **Requirement Reference** | ADO#4523 |\n| **Title / Description** | Verify dual-operator approval for thruster command |\n| **Preconditions** | Two users exist with role=commander. MFA is configured. |\n| **Test Steps** | 1. User 1 sends POST /api/command/thruster with valid JWT and MFA token. 2. Verify command is held in pending state. 3. User 2 approves command within 5 minutes. 4. Send another command. 5. Wait >5 minutes without approval. |\n| **Expected Result** | Command executes only after User 2 approval. Unapproved command auto-cancels after 5 mins. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
+            "work_item_type": "User Story",
+            "category": "security",
+            "source_doc": "ADO#4523"
+        }
+    ]
+    
+    filepath = ado_golden_dir / "ado_golden_set.json"
+    
+    # Check if the file already exists (it has the original 10 pairs). If so, append to it.
+    if filepath.exists():
+        with open(filepath, "r", encoding="utf-8") as f:
+            existing_data = json.load(f)
+            existing_pairs = existing_data.get("pairs", [])
+            
+        # Reformat existing pairs to 8-field format if they aren't already
+        for p in existing_pairs:
+            if not p["expected_test_case"].startswith("**Test Case:**\n| Field |"):
+                # Rough conversion for evaluation purposes
+                title_match = re.search(r"\*\*Test Case:\s*(.*?)\*\*", p["expected_test_case"])
+                title = title_match.group(1) if title_match else "Test Case"
+                
+                pre_match = re.search(r"Preconditions:\*\*(.*?)- \*\*Steps:", p["expected_test_case"], re.DOTALL)
+                preconditions = pre_match.group(1).strip() if pre_match else "None"
+                
+                steps_match = re.search(r"Steps:\*\*(.*?)- \*\*Expected", p["expected_test_case"], re.DOTALL)
+                steps = steps_match.group(1).strip().replace("\n  ", " ") if steps_match else ""
+                
+                exp_match = re.search(r"Expected Result:\*\*(.*)", p["expected_test_case"], re.DOTALL)
+                expected = exp_match.group(1).strip() if exp_match else ""
+                
+                p["expected_test_case"] = (
+                    "**Test Case:**\n| Field | Value |\n|---|---|\n"
+                    f"| **Test ID** | TC-X |\n"
+                    f"| **Requirement Reference** | {p.get('source_doc', 'Unknown')} |\n"
+                    f"| **Title / Description** | {title} |\n"
+                    f"| **Preconditions** | {preconditions} |\n"
+                    f"| **Test Steps** | {steps} |\n"
+                    f"| **Expected Result** | {expected} |\n"
+                    "| **Actual Result** | _To be filled during execution_ |\n"
+                    "| **Status** | _Not Executed_ |"
+                )
+                
+        # Merge new pairs with existing
+        # Avoid duplicates by ID
+        existing_ids = {p["id"] for p in existing_pairs}
+        for p in pairs:
+            if p["id"] not in existing_ids:
+                existing_pairs.append(p)
+                
+        pairs_to_save = existing_pairs
+    else:
+        pairs_to_save = pairs
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump({
+            "_description": "ADO-specific golden Q&A set for Phase 2 evaluation.",
+            "pairs": pairs_to_save
+        }, f, indent=2)
+
+    print(f"\n  ✅ ADO Golden Set: {len(pairs_to_save)} pairs → {filepath}")
+
+
 def main():
     output_dir = Path("data/synthetic")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("🔧 Generating synthetic data for Phase 1...\n")
+    print("🔧 Generating synthetic data for Phase 1 & 2...\n")
 
     print("📄 Requirement Specification Documents:")
     docs = generate_requirement_docs(output_dir)
@@ -631,15 +788,16 @@ def main():
 
     print("\n💬 Chat Exports:")
     chats = generate_chat_exports(output_dir)
+    
+    print("\n🎫 ADO Work Items (Phase 2):")
+    generate_ado_work_items(output_dir)
 
     print("\n📊 Golden Q&A Set:")
     generate_golden_qa(output_dir)
+    generate_ado_golden_qa(output_dir)
 
-    total = len(docs) + len(articles) + len(chats)
-    print(f"\n✅ Done! Generated {total} documents total.")
-    print(f"   - {len(docs)} requirement specs")
-    print(f"   - {len(articles)} reference articles")
-    print(f"   - {len(chats)} chat exports")
+    total = len(docs) + len(articles) + len(chats) + 20
+    print(f"\n✅ Done! Generated synthetic documents and ADO data.")
 
 
 if __name__ == "__main__":

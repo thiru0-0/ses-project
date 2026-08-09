@@ -21,6 +21,7 @@ from src.ragpoc.ingestion.loaders import load_pdf, load_docx, load_message
 from src.ragpoc.ingestion.normalizer import normalize
 from src.ragpoc.ingestion.chunker import chunk_document
 from src.ragpoc.retrieval.vector_store import VectorStore
+from src.ragpoc.ingestion.ado_loader import load_ado_work_items_from_file
 
 logging.basicConfig(
     level=logging.INFO,
@@ -102,6 +103,25 @@ def build_index():
                     total_chunks += len(chunks)
                     print(f"  ✅ {filepath.name}: {len(chunks)} chunks")
 
+                except Exception as e:
+                    print(f"  ❌ {filepath.name}: {e}")
+
+    # --- Process ADO Work Items ---
+    ado_dir = synthetic_dir / "ado_work_items"
+    if ado_dir.exists():
+        print(f"\n🎫 Processing ADO work items from {ado_dir}...")
+        for filepath in sorted(ado_dir.iterdir()):
+            if filepath.suffix.lower() == ".json":
+                try:
+                    # ADO loader returns a list of RawDocuments
+                    raw_docs = load_ado_work_items_from_file(filepath)
+                    for raw_doc in raw_docs:
+                        normalized = normalize(raw_doc)
+                        chunks = chunk_document(normalized)
+                        store.add_chunks(chunks)
+                        total_docs += 1
+                        total_chunks += len(chunks)
+                    print(f"  ✅ {filepath.name}: loaded {len(raw_docs)} items")
                 except Exception as e:
                     print(f"  ❌ {filepath.name}: {e}")
 

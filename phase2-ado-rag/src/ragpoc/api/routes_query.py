@@ -1,12 +1,11 @@
 """
 Query API routes.
 
-POST /query     — ask a question, get a grounded answer
+POST /query     — ask a question, get a grounded answer (supports mode + session)
 GET  /query/health — quick health check for query pipeline
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -17,8 +16,8 @@ router = APIRouter()
 
 class QueryRequest(BaseModel):
     question: str
-    mode: Optional[str] = None
-    session_id: Optional[str] = None
+    mode: str | None = None  # "qa", "test_case", or None for auto-detect
+    session_id: str = ""  # optional session scope
 
 
 class SourceCitationResponse(BaseModel):
@@ -34,6 +33,8 @@ class QueryResponseModel(BaseModel):
     declined: bool
     retrieved_chunks: int
     relevant_chunks: int
+    mode: str = "qa"
+    needs_review: bool = False
 
 
 def _get_pipeline():
@@ -51,11 +52,18 @@ async def query(request: QueryRequest):
 
     The question is processed through:
         retrieve → grade → generate (or decline if no relevant context)
+
+    Supports mode selection ("qa" / "test_case") and session scoping.
     """
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    logger.info("Query: '%s' (mode=%s, session_id=%s)", request.question[:100], request.mode, request.session_id)
+    logger.info(
+        "Query: '%s' (mode=%s, session=%s)",
+        request.question[:100],
+        request.mode or "auto",
+        request.session_id or "global",
+    )
 
     try:
         pipeline = _get_pipeline()
@@ -79,6 +87,8 @@ async def query(request: QueryRequest):
             declined=result.declined,
             retrieved_chunks=result.retrieved_chunks,
             relevant_chunks=result.relevant_chunks,
+            mode=result.mode,
+            needs_review=result.needs_review,
         )
     except Exception as e:
         logger.error("Query failed: %s", e)

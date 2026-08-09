@@ -1,10 +1,10 @@
 {
-  "_description": "ADO-specific golden Q&A set for Phase 2 evaluation. Each entry maps a user story to an expected test case. Modeled after Azure DevOps Demo Generator sample data.",
+  "_description": "ADO-specific golden Q&A set for Phase 2 evaluation.",
   "pairs": [
     {
       "id": "ado_001",
       "user_story": "As a customer, I want to be able to log in using my email and password so that I can access my account dashboard.",
-      "expected_test_case": "**Test Case: Verify successful login with valid credentials**\n- **Preconditions:** User account exists with email 'testuser@example.com' and valid password.\n- **Steps:**\n  1. Navigate to the login page.\n  2. Enter valid email address.\n  3. Enter correct password.\n  4. Click the 'Sign In' button.\n- **Expected Result:** User is redirected to the account dashboard. A welcome message displays the user's name.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_auth |\n| **Title / Description** | Verify successful login with valid credentials |\n| **Preconditions** | User account exists with email 'testuser@example.com' and valid password. |\n| **Test Steps** | 1. Navigate to the login page. 2. Enter valid email address. 3. Enter correct password. 4. Click the 'Sign In' button. |\n| **Expected Result** | User is redirected to the account dashboard. A welcome message displays the user's name. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "authentication",
       "source_doc": "demo_generator_auth"
@@ -12,7 +12,7 @@
     {
       "id": "ado_002",
       "user_story": "As a customer, I should see an error message when I enter incorrect login credentials so that I know my login attempt failed.",
-      "expected_test_case": "**Test Case: Verify error message on invalid login**\n- **Preconditions:** User account exists but password is intentionally incorrect.\n- **Steps:**\n  1. Navigate to the login page.\n  2. Enter valid email address.\n  3. Enter an incorrect password.\n  4. Click the 'Sign In' button.\n- **Expected Result:** An error message is displayed: 'Invalid email or password.' The user remains on the login page.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_auth |\n| **Title / Description** | Verify error message on invalid login |\n| **Preconditions** | User account exists but password is intentionally incorrect. |\n| **Test Steps** | 1. Navigate to the login page. 2. Enter valid email address. 3. Enter an incorrect password. 4. Click the 'Sign In' button. |\n| **Expected Result** | An error message is displayed: 'Invalid email or password.' The user remains on the login page. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "authentication",
       "source_doc": "demo_generator_auth"
@@ -20,7 +20,7 @@
     {
       "id": "ado_003",
       "user_story": "As a product owner, I want to add items to the shopping cart so that customers can purchase multiple products in a single transaction.",
-      "expected_test_case": "**Test Case: Verify adding an item to the shopping cart**\n- **Preconditions:** At least one product is available in the product catalog.\n- **Steps:**\n  1. Browse the product catalog.\n  2. Select a product.\n  3. Click the 'Add to Cart' button.\n  4. Navigate to the shopping cart page.\n- **Expected Result:** The selected product appears in the shopping cart with correct name, price, and quantity of 1.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_ecommerce |\n| **Title / Description** | Verify adding an item to the shopping cart |\n| **Preconditions** | At least one product is available in the product catalog. |\n| **Test Steps** | 1. Browse the product catalog. 2. Select a product. 3. Click the 'Add to Cart' button. 4. Navigate to the shopping cart page. |\n| **Expected Result** | The selected product appears in the shopping cart with correct name, price, and quantity of 1. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "shopping_cart",
       "source_doc": "demo_generator_ecommerce"
@@ -28,7 +28,7 @@
     {
       "id": "ado_004",
       "user_story": "As a user, I want to search for products by keyword so that I can quickly find what I'm looking for.",
-      "expected_test_case": "**Test Case: Verify product search returns relevant results**\n- **Preconditions:** Product catalog contains items with known keywords (e.g. 'laptop', 'headphones').\n- **Steps:**\n  1. Navigate to the home page.\n  2. Enter 'laptop' in the search bar.\n  3. Press Enter or click the search icon.\n- **Expected Result:** Search results page displays products containing 'laptop' in the title or description. Results are non-empty.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_ecommerce |\n| **Title / Description** | Verify product search returns relevant results |\n| **Preconditions** | Product catalog contains items with known keywords (e.g. 'laptop', 'headphones'). |\n| **Test Steps** | 1. Navigate to the home page. 2. Enter 'laptop' in the search bar. 3. Press Enter or click the search icon. |\n| **Expected Result** | Search results page displays products containing 'laptop' in the title or description. Results are non-empty. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "search",
       "source_doc": "demo_generator_ecommerce"
@@ -36,7 +36,7 @@
     {
       "id": "ado_005",
       "user_story": "As an admin, I want to view a list of all registered users so that I can manage user accounts.",
-      "expected_test_case": "**Test Case: Verify admin can view the user list**\n- **Preconditions:** Logged in as an admin. At least 3 user accounts exist.\n- **Steps:**\n  1. Navigate to the Admin Panel.\n  2. Click 'User Management'.\n  3. Observe the user list table.\n- **Expected Result:** A table displays all registered users with columns: Name, Email, Role, Status. Pagination is available if there are more than 20 users.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_admin |\n| **Title / Description** | Verify admin can view the user list |\n| **Preconditions** | Logged in as an admin. At least 3 user accounts exist. |\n| **Test Steps** | 1. Navigate to the Admin Panel. 2. Click 'User Management'. 3. Observe the user list table. |\n| **Expected Result** | A table displays all registered users with columns: Name, Email, Role, Status. Pagination is available if there are more than 20 users. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "user_management",
       "source_doc": "demo_generator_admin"
@@ -44,7 +44,7 @@
     {
       "id": "ado_006",
       "user_story": "As a customer, I want to receive an email confirmation after placing an order so that I have a record of my purchase.",
-      "expected_test_case": "**Test Case: Verify order confirmation email is sent**\n- **Preconditions:** User is logged in. Shopping cart has at least one item. Email service is configured.\n- **Steps:**\n  1. Proceed to checkout from the shopping cart.\n  2. Enter shipping and payment details.\n  3. Click 'Place Order'.\n  4. Check the registered email inbox.\n- **Expected Result:** An order confirmation email is received within 5 minutes. The email contains the order number, list of items, total price, and estimated delivery date.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_ecommerce |\n| **Title / Description** | Verify order confirmation email is sent |\n| **Preconditions** | User is logged in. Shopping cart has at least one item. Email service is configured. |\n| **Test Steps** | 1. Proceed to checkout from the shopping cart. 2. Enter shipping and payment details. 3. Click 'Place Order'. 4. Check the registered email inbox. |\n| **Expected Result** | An order confirmation email is received within 5 minutes. The email contains the order number, list of items, total price, and estimated delivery date. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "order_management",
       "source_doc": "demo_generator_ecommerce"
@@ -52,7 +52,7 @@
     {
       "id": "ado_007",
       "user_story": "As a developer, I want the API to return a 404 status code when a requested resource does not exist so that clients can handle missing resources gracefully.",
-      "expected_test_case": "**Test Case: Verify API returns 404 for non-existent resource**\n- **Preconditions:** API server is running. No resource exists with ID '99999'.\n- **Steps:**\n  1. Send a GET request to /api/products/99999.\n  2. Observe the HTTP response status code.\n  3. Observe the response body.\n- **Expected Result:** The API returns HTTP 404 with a JSON body containing {\"error\": \"Resource not found\"}.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_api |\n| **Title / Description** | Verify API returns 404 for non-existent resource |\n| **Preconditions** | API server is running. No resource exists with ID '99999'. |\n| **Test Steps** | 1. Send a GET request to /api/products/99999. 2. Observe the HTTP response status code. 3. Observe the response body. |\n| **Expected Result** | The API returns HTTP 404 with a JSON body containing {\"error\": \"Resource not found\"}. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "api",
       "source_doc": "demo_generator_api"
@@ -60,7 +60,7 @@
     {
       "id": "ado_008",
       "user_story": "As a user, I want to reset my password via email so that I can regain access to my account if I forget my password.",
-      "expected_test_case": "**Test Case: Verify password reset flow**\n- **Preconditions:** User account exists with a verified email address.\n- **Steps:**\n  1. Navigate to the login page.\n  2. Click 'Forgot Password'.\n  3. Enter the registered email address.\n  4. Click 'Send Reset Link'.\n  5. Open the reset email and click the reset link.\n  6. Enter and confirm a new password.\n  7. Click 'Reset Password'.\n- **Expected Result:** A success message is displayed. The user can log in with the new password. The old password no longer works.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_auth |\n| **Title / Description** | Verify password reset flow |\n| **Preconditions** | User account exists with a verified email address. |\n| **Test Steps** | 1. Navigate to the login page. 2. Click 'Forgot Password'. 3. Enter the registered email address. 4. Click 'Send Reset Link'. 5. Open the reset email and click the reset link. 6. Enter and confirm a new password. 7. Click 'Reset Password'. |\n| **Expected Result** | A success message is displayed. The user can log in with the new password. The old password no longer works. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "authentication",
       "source_doc": "demo_generator_auth"
@@ -68,7 +68,7 @@
     {
       "id": "ado_009",
       "user_story": "As a customer, I want to filter products by category and price range so that I can narrow down my options.",
-      "expected_test_case": "**Test Case: Verify product filtering by category and price**\n- **Preconditions:** Product catalog contains items in multiple categories with varying prices.\n- **Steps:**\n  1. Navigate to the product catalog page.\n  2. Select category 'Electronics' from the category filter.\n  3. Set the price range filter to $50 - $200.\n  4. Click 'Apply Filters'.\n- **Expected Result:** Only products in the 'Electronics' category with prices between $50 and $200 are displayed. The result count is updated. A 'Clear Filters' option is visible.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_ecommerce |\n| **Title / Description** | Verify product filtering by category and price |\n| **Preconditions** | Product catalog contains items in multiple categories with varying prices. |\n| **Test Steps** | 1. Navigate to the product catalog page. 2. Select category 'Electronics' from the category filter. 3. Set the price range filter to $50 - $200. 4. Click 'Apply Filters'. |\n| **Expected Result** | Only products in the 'Electronics' category with prices between $50 and $200 are displayed. The result count is updated. A 'Clear Filters' option is visible. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "search",
       "source_doc": "demo_generator_ecommerce"
@@ -76,10 +76,26 @@
     {
       "id": "ado_010",
       "user_story": "As a team lead, I want the CI/CD pipeline to run automated tests on every pull request so that we catch regressions before merging.",
-      "expected_test_case": "**Test Case: Verify CI pipeline triggers on pull request**\n- **Preconditions:** CI/CD pipeline is configured in the repository. At least one automated test exists.\n- **Steps:**\n  1. Create a new branch from main.\n  2. Make a code change and push to the branch.\n  3. Open a pull request targeting main.\n  4. Observe the CI/CD pipeline status on the PR.\n- **Expected Result:** The CI pipeline is triggered automatically. Test results are reported as a status check on the PR. The PR cannot be merged until the pipeline passes.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-X |\n| **Requirement Reference** | demo_generator_pipelines |\n| **Title / Description** | Verify CI pipeline triggers on pull request |\n| **Preconditions** | CI/CD pipeline is configured in the repository. At least one automated test exists. |\n| **Test Steps** | 1. Create a new branch from main. 2. Make a code change and push to the branch. 3. Open a pull request targeting main. 4. Observe the CI/CD pipeline status on the PR. |\n| **Expected Result** | The CI pipeline is triggered automatically. Test results are reported as a status check on the PR. The PR cannot be merged until the pipeline passes. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
       "work_item_type": "User Story",
       "category": "devops",
       "source_doc": "demo_generator_pipelines"
+    },
+    {
+      "id": "ado_4521",
+      "user_story": "As a Ground Station Operator, I need to see real-time satellite telemetry metrics (battery, temperature, orbit altitude) on the SpaceOps dashboard so that I can monitor satellite health during flyovers. The data must be processed and displayed within 500ms of reception from the ground station antenna.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-1 |\n| **Requirement Reference** | ADO#4521 |\n| **Title / Description** | Verify real-time telemetry dashboard updates and alerts |\n| **Preconditions** | Ground station is receiving telemetry stream on UDP port 8000. SpaceOps dashboard is open. |\n| **Test Steps** | 1. Observe dashboard widgets during active telemetry reception. 2. Verify widgets update within 500ms of packet reception. 3. Simulate a packet loss (stop stream). 4. Wait 2 seconds and observe dashboard. 5. Inject telemetry packet with battery voltage = 21.5V. |\n| **Expected Result** | Widgets update in <500ms. On packet loss, dashboard shows 'Data Stale' after 2s. Battery <22V triggers critical red alert. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
+      "work_item_type": "User Story",
+      "category": "spaceops",
+      "source_doc": "ADO#4521"
+    },
+    {
+      "id": "ado_4523",
+      "user_story": "As a Security Officer, I want all spacecraft commanding APIs (especially thruster firings) to require Multi-Factor Authentication (MFA) and dual-operator approval before transmission.",
+      "expected_test_case": "**Test Case:**\n| Field | Value |\n|---|---|\n| **Test ID** | TC-2 |\n| **Requirement Reference** | ADO#4523 |\n| **Title / Description** | Verify dual-operator approval for thruster command |\n| **Preconditions** | Two users exist with role=commander. MFA is configured. |\n| **Test Steps** | 1. User 1 sends POST /api/command/thruster with valid JWT and MFA token. 2. Verify command is held in pending state. 3. User 2 approves command within 5 minutes. 4. Send another command. 5. Wait >5 minutes without approval. |\n| **Expected Result** | Command executes only after User 2 approval. Unapproved command auto-cancels after 5 mins. |\n| **Actual Result** | _To be filled during execution_ |\n| **Status** | _Not Executed_ |",
+      "work_item_type": "User Story",
+      "category": "security",
+      "source_doc": "ADO#4523"
     }
   ]
 }

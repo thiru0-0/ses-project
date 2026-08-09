@@ -2,9 +2,8 @@
 Provider registry — the single swap point for the entire project.
 
 Factory functions that read from config and return concrete providers.
-Set LLM_PROVIDER in .env to switch:
-  - "groq"   → Groq cloud (default)
-  - "ollama" → local Ollama
+When migrating to a different Ollama model or a cloud endpoint, only
+this file needs to change.
 """
 
 import logging
@@ -12,6 +11,7 @@ from functools import lru_cache
 
 from src.ragpoc.models.base import EmbeddingProvider, LLMProvider
 from src.ragpoc.models.embeddings import SentenceTransformerEmbeddings
+from src.ragpoc.models.llm import OllamaLLM
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -31,22 +31,10 @@ def get_embedding_provider() -> EmbeddingProvider:
 def get_llm_provider() -> LLMProvider:
     """Return the configured LLM provider (singleton).
 
-    Reads settings.llm_provider to decide which backend to use.
+    Currently uses Ollama with Qwen2.5:14B-Instruct.
     """
-    provider = settings.llm_provider.lower()
-    logger.info("Initializing LLM provider: %s", provider)
-
-    if provider == "groq":
-        from src.ragpoc.models.groq_llm import GroqLLM
-        return GroqLLM(model=settings.groq_model)
-    elif provider == "ollama":
-        from src.ragpoc.models.llm import OllamaLLM
-        return OllamaLLM(model=settings.llm_model, base_url=settings.ollama_base_url)
-    else:
-        raise ValueError(
-            f"Unknown LLM provider '{provider}'. "
-            f"Supported: 'groq', 'ollama'. Set LLM_PROVIDER in .env."
-        )
+    logger.info("Initializing LLM provider: %s", settings.llm_model)
+    return OllamaLLM(model=settings.llm_model, base_url=settings.ollama_base_url)
 
 
 def get_llamaindex_llm():
@@ -81,15 +69,9 @@ def check_providers_health() -> dict[str, bool]:
         Dictionary mapping provider name to availability status.
     """
     llm = get_llm_provider()
-    provider = settings.llm_provider.lower()
-    result = {
+    return {
         "llm_available": llm.is_available(),
-        "llm_provider": provider,
+        "llm_model": settings.llm_model,
         "embedding_model": settings.embedding_model,
+        "ollama_url": settings.ollama_base_url,
     }
-    if provider == "ollama":
-        result["llm_model"] = settings.llm_model
-        result["ollama_url"] = settings.ollama_base_url
-    elif provider == "groq":
-        result["llm_model"] = settings.groq_model
-    return result

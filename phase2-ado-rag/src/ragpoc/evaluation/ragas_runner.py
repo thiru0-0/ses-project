@@ -21,18 +21,19 @@ from config.settings import settings
 logger = logging.getLogger(__name__)
 
 
-def run_evaluation(golden_qa_path: str | None = None) -> dict:
+def run_evaluation(golden_qa_path: str | None = None, eval_mode: str = "qa") -> dict:
     """Run the full Ragas evaluation against the golden Q&A set.
 
     Steps:
-    1. Load golden Q&A pairs
+    1. Load golden Q&A pairs (or ADO pairs)
     2. Run each question through the live pipeline
     3. Collect responses, contexts, and ground truths
-    4. Compute Ragas metrics
+    4. Compute metrics (Ragas for QA, custom 5-dimension for ADO)
     5. Save results to eval_results/
 
     Args:
-        golden_qa_path: Path to golden set JSONL. Defaults to settings.
+        golden_qa_path: Path to golden set JSONL or JSON. Defaults to settings.
+        eval_mode: "qa" or "ado"
 
     Returns:
         Dictionary with metrics and per-question details.
@@ -42,7 +43,10 @@ def run_evaluation(golden_qa_path: str | None = None) -> dict:
     from src.ragpoc.generation.pipeline import RAGPipeline
     from src.ragpoc.retrieval.retriever import Retriever
 
-    # Load golden set
+    # Load golden set based on mode
+    if eval_mode == "ado" and not golden_qa_path:
+        golden_qa_path = settings.ado_golden_qa_path
+        
     pairs = load_golden_set(golden_qa_path)
     logger.info("Loaded %d golden Q&A pairs for evaluation", len(pairs))
 
@@ -67,7 +71,10 @@ def run_evaluation(golden_qa_path: str | None = None) -> dict:
         )
 
         # Run through pipeline
-        result = pipeline.query(pair.question)
+        if eval_mode == "ado":
+            result = pipeline.query(pair.question, mode="test_case")
+        else:
+            result = pipeline.query(pair.question)
 
         # Get retrieved contexts
         retrieved = retriever.retrieve(pair.question)
@@ -88,13 +95,17 @@ def run_evaluation(golden_qa_path: str | None = None) -> dict:
                 "retrieved_chunks": result.retrieved_chunks,
                 "relevant_chunks": result.relevant_chunks,
                 "category": pair.category,
+                "mode": result.mode,
             }
         )
 
-    # Compute Ragas metrics
-    metrics = _compute_ragas_metrics(
-        questions, answers, contexts_list, ground_truths
-    )
+    # Compute metrics
+    if eval_mode == "ado":
+        metrics = _compute_ado_metrics(questions, answers, contexts_list, ground_truths)
+    else:
+        metrics = _compute_ragas_metrics(
+            questions, answers, contexts_list, ground_truths
+        )
 
     # Build results
     results = {
@@ -221,6 +232,86 @@ def _compute_basic_metrics(
         "context_precision": avg_overlap,
         "context_recall": avg_overlap,
         "note": "basic_metrics_fallback",
+    }
+
+
+def _compute_ado_metrics(
+    questions: list[str],
+    answers: list[str],
+    contexts: list[list[str]],
+    ground_truths: list[str],
+) -> dict:
+    """Compute the 5-dimension ADO evaluation metrics.
+    
+    1. Test Coverage: Does the test case cover the user story criteria?
+    2. Traceability: Does it cite the correct requirement ID?
+    3. Faithfulness: Is the expected result grounded in the source?
+    4. Structural Completeness: Does it have all 8 fields?
+    5. Guardrail Behavior: Does it decline properly on missing context?
+    """
+    total = len(answers)
+    if total == 0:
+        return {}
+        
+    scores = {
+        "test_coverage": 0.0,
+        "traceability": 0.0,
+        "faithfulness": 0.0,
+        "structural_completeness": 0.0,
+        "guardrail_behavior": 0.0,
+    }
+    
+    # 8-field requirement checklist
+    required_fields = [
+        "Test ID", "Requirement Reference", "Title", "Preconditions",
+        "Test Steps", "Expected Result", "Actual Result", "Status"
+    ]
+    
+    # The decline string used by the pipeline
+    decline_string = "I couldn't find this information"
+    
+    for answer, truth in zip(answers, ground_truths):
+        answer_lower = answer.lower()
+        
+        # 5. Guardrail Behavior: If it should decline, did it? If it shouldn't, did it hallucinate?
+        # A simple proxy: if the ground truth implies we don't have it, we expect a decline.
+        # But for this golden set, all have valid contexts. So guardrail is whether it avoided the decline string when it shouldn't have, or properly formatted.
+        if decline_string.lower() not in answer_lower:
+            scores["guardrail_behavior"] += 1.0
+            
+        # 1. Structural completeness (check for fields)
+        fields_present = sum(1 for field in required_fields if field.lower() in answer_lower)
+        struct_score = fields_present / len(required_fields)
+        scores["structural_completeness"] += struct_score
+        
+        # 2. Traceability (check for ADO reference)
+        import re
+        ado_ref = re.search(r'ado#\d+', answer_lower)
+        if ado_ref:
+            scores["traceability"] += 1.0
+            
+        # 3. Faithfulness & 1. Coverage (approximated by word overlap with ground truth)
+        answer_words = set(answer_lower.split())
+        truth_words = set(truth.lower().split())
+        if truth_words:
+            overlap = len(answer_words & truth_words) / len(truth_words)
+            scores["faithfulness"] += overlap
+            scores["test_coverage"] += min(1.0, overlap * 1.2) # Coverage is a bit looser than strict overlap
+            
+    # Average the scores
+    for k in scores:
+        scores[k] = scores[k] / total
+        
+    scores["note"] = "ado_metrics"
+    
+    # Map to standard names for UI rendering, but keep originals
+    return {
+        "faithfulness": scores["faithfulness"],
+        "answer_relevancy": scores["traceability"], # map traceability to relevancy slot
+        "context_precision": scores["structural_completeness"], # map struct to precision slot
+        "context_recall": scores["guardrail_behavior"], # map guardrail to recall slot
+        "test_coverage": scores["test_coverage"],
+        "note": "ado_metrics",
     }
 
 

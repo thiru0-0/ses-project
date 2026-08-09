@@ -19,15 +19,11 @@ class Settings(BaseSettings):
     )
 
     # --- LLM Provider Selection ---
-    llm_provider: str = "groq"  # "groq" or "ollama"
+    llm_provider: str = "ollama"  # "ollama" (local) or "openrouter" (cloud)
 
-    # --- Ollama (used when llm_provider=ollama) ---
+    # --- Ollama (must be running locally) ---
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "qwen2.5:14b"
-
-    # --- Groq (used when llm_provider=groq) ---
-    groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
 
     # --- Embeddings (local) ---
     embedding_model: str = "BAAI/bge-small-en-v1.5"
@@ -48,6 +44,9 @@ class Settings(BaseSettings):
     top_k: int = 5
     relevance_threshold: float = 0.35
 
+    # --- Human-review flag ---
+    human_review_threshold: float = 0.55  # below this confidence, flag for review
+
     # --- HyDE (Hypothetical Document Embeddings) ---
     hyde_enabled: bool = True
     hyde_temperature: float = 0.4  # slightly creative for hypothetical drafts
@@ -60,6 +59,10 @@ class Settings(BaseSettings):
     # --- ADO-specific chunking (tokens) ---
     chunk_size_ado: int = 400
     chunk_overlap_ado: int = 70
+
+    # --- Server ports ---
+    api_port: int = 8001
+    streamlit_port: int = 8502
 
     # --- Paths ---
     synthetic_data_dir: str = "./data/synthetic"

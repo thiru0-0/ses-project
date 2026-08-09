@@ -1,2 +1,0 @@
-# Reference article URLs to scrape during Phase 1
-# Add one URL per line
